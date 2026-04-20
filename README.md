@@ -1,115 +1,120 @@
-# 👁️ Diabetic Retinopathy Detection
+# 👁️ Diabetic Retinopathy Detection (Deep Learning Project)
 
-A clean, modular **inference pipeline** for detecting diabetic retinopathy severity from retinal fundus images. Built with PyTorch + Streamlit.
+This project is a modular deep learning system designed to classify retinal fundus images into different stages of **Diabetic Retinopathy (DR)**.
 
-> ⚠️ **This is a project skeleton.** It ships with a dummy model for pipeline validation. Replace the model with a trained backbone before clinical use.
+It includes a complete **inference pipeline + web application**, with a structure ready for integration of a trained CNN model.
 
 ---
 
-## 🗂️ Project Structure
+## 🚀 Features
 
-```
+* Upload retinal images via Streamlit UI
+* Modular inference pipeline (preprocess → model → prediction)
+* Class-wise probability outputs
+* Confidence score display
+* Clean and scalable project structure
+* Ready for real model integration
+
+---
+
+## 🧠 DR Classification Classes
+
+The system predicts one of the following:
+
+* No Diabetic Retinopathy
+* Mild Diabetic Retinopathy
+* Moderate Diabetic Retinopathy
+* Severe Diabetic Retinopathy
+* Proliferative Diabetic Retinopathy
+
+---
+
+## 📁 Project Structure
+
 dr-retinopathy-project/
-├── app/
-│   └── app.py               # Streamlit web app
-├── model/
-│   ├── model_loader.py      # DummyDRModel definition + load_model()
-│   └── predict.py           # Inference pipeline → label + probabilities
-├── utils/
-│   ├── preprocess.py        # Image → (1, 3, 224, 224) tensor
-│   └── gradcam.py           # Grad-CAM placeholder (future)
-├── data/
-│   └── sample_images/       # Drop test images here
-├── saved_models/
-│   └── model.pth            # Trained weights go here (see saved_models/README.txt)
+
+├── app/                # Streamlit UI
+│   └── app.py
+
+├── model/              # Model loading & prediction
+│   ├── model_loader.py
+│   └── predict.py
+
+├── utils/              # Preprocessing + utilities
+│   ├── preprocess.py
+│   └── gradcam.py
+
+├── saved_models/       # Model weights
+│   └── model.pth
+
+├── data/               # Sample images (optional)
+
 ├── requirements.txt
 ├── README.md
 └── .gitignore
-```
 
 ---
 
-## ⚙️ Setup
+## ⚙️ Installation & Setup
 
-### 1. Clone the repo
+git clone https://github.com/YOUR_USERNAME/diabetic-retinopathy-project.git
+cd diabetic-retinopathy-project
 
-```bash
-git clone https://github.com/your-username/dr-retinopathy-project.git
-cd dr-retinopathy-project
-```
-
-### 2. Create a virtual environment
-
-```bash
-python -m venv venv
-source venv/bin/activate        # macOS / Linux
-venv\Scripts\activate           # Windows
-```
-
-### 3. Install dependencies
-
-```bash
 pip install -r requirements.txt
-```
-
-### 4. (Optional) Generate dummy model weights
-
-```bash
-python -c "
-import torch
-from model.model_loader import DummyDRModel
-model = DummyDRModel()
-torch.save(model.state_dict(), 'saved_models/model.pth')
-print('Saved dummy model.pth')
-"
-```
 
 ---
 
-## 🚀 Run the App
+## ▶️ Run the Application
 
-```bash
-streamlit run app/app.py
-```
-
-Then open **http://localhost:8501** in your browser, upload any JPG/PNG image, and see the prediction.
+python -m streamlit run app/app.py
 
 ---
 
-## 🔬 DR Severity Classes
+## ⚠️ Current Status
 
-| Grade | Label             | Description                              |
-|-------|-------------------|------------------------------------------|
-| 0     | No DR             | No signs of diabetic retinopathy         |
-| 1     | Mild              | Microaneurysms only                      |
-| 2     | Moderate          | More than mild, less than severe         |
-| 3     | Severe            | Extensive haemorrhages, no PDR           |
-| 4     | Proliferative DR  | Neovascularisation — most severe stage   |
+* The system currently uses a **dummy model (placeholder)**
+* Predictions are **not medically accurate yet**
+* Designed to validate pipeline and UI
 
 ---
 
-## 🧩 Module Overview
+## 🧪 Generate Dummy Model Weights (Optional)
 
-| File                    | Responsibility                                              |
-|-------------------------|-------------------------------------------------------------|
-| `utils/preprocess.py`   | OpenCV image load → resize → normalise → CHW batch tensor  |
-| `model/model_loader.py` | DummyDRModel (FC) + `load_model()` with optional .pth load |
-| `model/predict.py`      | Tensor inference → softmax → top-1 label + prob dict       |
-| `app/app.py`            | Streamlit UI: upload → preprocess → predict → display      |
-| `utils/gradcam.py`      | Grad-CAM placeholder (implement in next milestone)          |
+python -c "import torch; from model.model_loader import DummyDRModel; model = DummyDRModel(); torch.save(model.state_dict(), 'saved_models/model.pth')"
 
 ---
 
-## 🛣️ Roadmap
+## 🔬 Future Work
 
-- [ ] Replace `DummyDRModel` with EfficientNet-B4 backbone
-- [ ] Add training pipeline (`train/`)
-- [ ] Implement Grad-CAM heatmap overlay
-- [ ] Add model evaluation metrics (AUC, Cohen's Kappa)
-- [ ] Dockerise the app
+* Integrate trained CNN (ResNet / EfficientNet)
+* Add Grad-CAM for explainability
+* Improve UI for clinical usability
+* Add evaluation metrics (Accuracy, F1-score, AUC)
 
 ---
 
-## 📄 License
+## ⚠️ Model Files
 
-MIT — free to use and modify for research and educational purposes.
+* Do NOT commit large `.pth` files to GitHub
+* Use Git LFS or DVC for model versioning
+
+---
+
+## 👨‍💻 Team Roles
+
+* Diksha → UI + Inference Pipeline + Integration
+* Likith → Model Training (CNN)
+* Inchara → Data + Preprocessing
+* Vigneshwara → Evaluation + Metrics
+
+---
+
+## ⚠️ Disclaimer
+
+This project is for **educational purposes only** and should NOT be used for real medical diagnosis.
+
+---
+
+## ⭐ Contribution
+
+Feel free to fork and improve the project!
