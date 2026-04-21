@@ -4,11 +4,11 @@ utils/preprocess.py
 Image preprocessing pipeline for Diabetic Retinopathy Detection.
 
 Steps:
-    1. Read image from disk using OpenCV
-    2. Resize to 224x224 (standard for most CNN backbones)
+    1. Read image from disk using OpenCV (BGR → RGB)
+    2. Resize to 224×224 (standard for ResNet-50)
     3. Normalize pixel values to [0, 1]
-    4. Convert from HWC (Height, Width, Channel) to CHW (Channel, Height, Width)
-    5. Add batch dimension → final shape: (1, 3, 224, 225)
+    4. Apply ImageNet channel-wise mean/std normalization
+    5. Convert from HWC to CHW and add batch dimension → (1, 3, 224, 224)
 """
 
 import cv2
@@ -18,16 +18,20 @@ import numpy as np
 # ── Constants ──────────────────────────────────────────────────────────────────
 IMAGE_SIZE = (224, 224)   # (width, height) for cv2.resize
 
+# ImageNet normalization constants (required for ResNet-50 pretrained features)
+IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+IMAGENET_STD  = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+
 
 def load_image(image_path: str) -> np.ndarray:
     """
-    Read an image from disk in BGR format using OpenCV.
+    Read an image from disk. Converts from OpenCV BGR to RGB.
 
     Args:
         image_path: Absolute or relative path to the image file.
 
     Returns:
-        img: NumPy array of shape (H, W, 3) in BGR format, dtype uint8.
+        img: NumPy array of shape (H, W, 3) in RGB format, dtype uint8.
 
     Raises:
         FileNotFoundError: If the image cannot be loaded from the given path.
@@ -35,6 +39,8 @@ def load_image(image_path: str) -> np.ndarray:
     img = cv2.imread(image_path)
     if img is None:
         raise FileNotFoundError(f"Could not load image from path: {image_path}")
+    # OpenCV reads as BGR — convert to RGB for ImageNet-style normalization
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
 
 
@@ -54,15 +60,17 @@ def resize_image(img: np.ndarray, size: tuple = IMAGE_SIZE) -> np.ndarray:
 
 def normalize_image(img: np.ndarray) -> np.ndarray:
     """
-    Normalize pixel values from [0, 255] to [0.0, 1.0].
+    Normalize pixel values to [0, 1] then apply ImageNet mean/std.
 
     Args:
-        img: uint8 image array.
+        img: uint8 RGB image array of shape (H, W, 3).
 
     Returns:
-        float32 image array with values in [0, 1].
+        float32 array normalized with ImageNet statistics.
     """
-    return img.astype(np.float32) / 255.0
+    img = img.astype(np.float32) / 255.0
+    img = (img - IMAGENET_MEAN) / IMAGENET_STD
+    return img
 
 
 def to_tensor_format(img: np.ndarray) -> np.ndarray:
@@ -86,6 +94,8 @@ def to_tensor_format(img: np.ndarray) -> np.ndarray:
 def preprocess(image_path: str) -> np.ndarray:
     """
     Full preprocessing pipeline: load → resize → normalize → tensor format.
+
+    Applies ImageNet mean/std normalization as required by ResNet-50.
 
     Args:
         image_path: Path to the input image.

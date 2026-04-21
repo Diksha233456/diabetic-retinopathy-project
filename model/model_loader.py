@@ -1,40 +1,86 @@
 """
 model/model_loader.py
 ---------------------
-Defines a lightweight dummy model and a helper to load it.
+Defines the model architecture and helpers to load weights.
 
-The DummyDRModel is intentionally simple — a single fully-connected layer —
-so the project runs without GPU or heavy dependencies while you wire up the
-rest of the pipeline.  Swap it with a real backbone (ResNet, EfficientNet …)
-when you're ready for training.
+Two loaders are provided:
+  - load_resnet_model()  → uses the real ResNet-50 backbone (dr_model_resnet50.pth)
+  - load_model()         → legacy dummy-model loader (kept for compatibility)
 """
 
 import os
 import torch
 import torch.nn as nn
+from torchvision import models
 
 
 # ── Number of DR severity classes ─────────────────────────────────────────────
 NUM_CLASSES = 5   # No DR | Mild | Moderate | Severe | Proliferative DR
 
-# Flattened size of a 224×224 RGB image  (3 × 224 × 224)
-INPUT_FEATURES = 3 * 224 * 224
 
+# ── ResNet-50 model ────────────────────────────────────────────────────────────
 
-# ── Model definition ───────────────────────────────────────────────────────────
-
-class DummyDRModel(nn.Module):
+def build_resnet50(num_classes: int = NUM_CLASSES) -> nn.Module:
     """
-    Minimal dummy model for Diabetic Retinopathy Detection.
-
-    Architecture:
-        Flatten → Linear(150_528 → 256) → ReLU → Linear(256 → 5)
-
-    This is NOT a real medical model.  It produces random-ish outputs and is
-    only meant to validate the end-to-end inference pipeline.
+    Build a ResNet-50 model with the final fully-connected layer replaced
+    to output `num_classes` logits.
 
     Args:
         num_classes: Number of output classes (default: 5).
+
+    Returns:
+        ResNet-50 nn.Module with the fc layer adapted for DR classification.
+    """
+    model = models.resnet50(weights=None)
+    in_features = model.fc.in_features
+    model.fc = nn.Linear(in_features, num_classes)
+    return model
+
+
+def load_resnet_model(
+    weights_path: str = "saved_models/dr_model_resnet50.pth",
+    num_classes: int = NUM_CLASSES,
+) -> nn.Module:
+    """
+    Instantiate a ResNet-50 model and load the provided weights.
+
+    Args:
+        weights_path: Path to the .pth weights file saved with
+                      ``torch.save(model.state_dict(), path)``.
+        num_classes:  Number of output classes (default: 5).
+
+    Returns:
+        ResNet-50 model in eval mode on CPU.
+
+    Raises:
+        FileNotFoundError: If `weights_path` does not exist.
+    """
+    model = build_resnet50(num_classes=num_classes)
+
+    if not os.path.exists(weights_path):
+        raise FileNotFoundError(
+            f"[model_loader] ❌ Weights not found at '{weights_path}'. "
+            "Please place 'dr_model_resnet50.pth' in the saved_models/ directory."
+        )
+
+    state_dict = torch.load(weights_path, map_location="cpu", weights_only=True)
+    model.load_state_dict(state_dict)
+    print(f"[model_loader] OK Loaded ResNet-50 weights from '{weights_path}'")
+
+    model.eval()
+    return model
+
+
+# -- Legacy dummy model ---------------------------------------------------------
+
+# Flattened size of a 224x224 RGB image  (3 x 224 x 224)
+INPUT_FEATURES = 3 * 224 * 224
+
+
+class DummyDRModel(nn.Module):
+    """
+    Minimal dummy model kept for backward compatibility.
+    NOT used in production inference.
     """
 
     def __init__(self, num_classes: int = NUM_CLASSES):
@@ -47,51 +93,21 @@ class DummyDRModel(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass.
-
-        Args:
-            x: Input tensor of shape (N, 3, 224, 224).
-
-        Returns:
-            Logits tensor of shape (N, num_classes).
-        """
         x = self.flatten(x)
         return self.classifier(x)
 
 
-# ── Loader ─────────────────────────────────────────────────────────────────────
-
 def load_model(weights_path: str = "saved_models/model.pth") -> DummyDRModel:
-    """
-    Instantiate the model and optionally load saved weights.
-
-    If `weights_path` exists the function loads the state-dict from that file;
-    otherwise it logs a warning and returns the model with random weights.
-    The model is always set to evaluation mode before being returned.
-
-    Args:
-        weights_path: Path to a .pth file produced by torch.save(model.state_dict(), …).
-
-    Returns:
-        model: DummyDRModel in eval mode, on CPU.
-
-    Example:
-        >>> model = load_model("saved_models/model.pth")
-        >>> model
-        DummyDRModel(...)
-    """
+    """Legacy dummy-model loader. Use `load_resnet_model` for real inference."""
     model = DummyDRModel(num_classes=NUM_CLASSES)
-
     if os.path.exists(weights_path):
         state_dict = torch.load(weights_path, map_location="cpu")
         model.load_state_dict(state_dict)
-        print(f"[model_loader] ✅ Loaded weights from '{weights_path}'")
+        print(f"[model_loader] OK Loaded dummy weights from '{weights_path}'")
     else:
         print(
-            f"[model_loader] ⚠️  No weights found at '{weights_path}'. "
+            f"[model_loader] WARNING No weights found at '{weights_path}'. "
             "Using randomly initialised weights (dummy mode)."
         )
-
-    model.eval()   # Disable dropout / batchnorm training behaviour
+    model.eval()
     return model
