@@ -40,3 +40,8 @@ Thumbs.db
 # Temp files
 *.tmp
 *.log
+
+# Unused / oversized model weights (not required by the app)
+# dr_model_resnet50.pth is intentionally kept tracked (used by the app)
+saved_models/cnn_model.pth
+saved_models/model.pth
