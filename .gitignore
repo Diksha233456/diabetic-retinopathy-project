@@ -19,10 +19,7 @@ env/
 .ipynb_checkpoints/
 *.ipynb
 
-# Model weights (large files — use Git LFS or DVC instead)
-saved_models/*.pth
-saved_models/*.pt
-saved_models/*.ckpt
+
 
 # Data
 data/sample_images/*.jpg
